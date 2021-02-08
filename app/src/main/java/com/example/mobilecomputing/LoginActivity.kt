@@ -31,13 +31,17 @@ class LoginActivity : AppCompatActivity() {
         ).edit().putString("password", "admin").apply()
 
         binding.LoginButton.setOnClickListener {
-            Log.d("Login", "Login Button Triggered")
+            Log.d("Test", "Login Button Triggered")
             // Authentication check
             authentication()
         }
 
+        binding.CreateButton.setOnClickListener {
+            Log.d("Test", "Create Account Button Triggered")
+            // CreateAccountActivity
+        }
         binding.ChangeButton.setOnClickListener {
-            Log.d("ChangeLogin", "Change Login Button Triggered")
+            Log.d("Test", "Change Login Button Triggered")
             // Change to Fingerprint Login
             startActivity(Intent(applicationContext, FingerLoginActivity::class.java))
         }
@@ -71,7 +75,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkLoginStatus() {
-        val loginStatus = applicationContext.getSharedPreferences(getString(R.string.sharedPreferences), Context.MODE_PRIVATE).getInt("LoginStatus", 0)
+        val loginStatus = applicationContext.getSharedPreferences(
+            getString(R.string.sharedPreferences),
+            Context.MODE_PRIVATE).getInt("LoginStatus", 0)
 
         if(loginStatus == 1){
             startActivity(Intent(applicationContext, MainActivity::class.java))

@@ -13,6 +13,12 @@
     <string name="action_profile_backtomain">Back to Main Screen</string>
     <string name="welcome">"Welcome !"</string>
     <string name="main_top_title">Remainders</string>
+    <string name="action_main_add_remainder">Add remainder</string>
+    <string name="action_main_profile">Go to Profile</string>
+    <string name="action_main_logout">Logout</string>
+    <string name="reminder_message">Message:</string>
+    <string name="reminder_time">Time:</string>
+    <string name="reminder_location">Location:</string>
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>

@@ -58,7 +58,7 @@
         android:textAllCaps="true"
         android:textColor="@color/white"
         android:textColorHighlight="?android:attr/textColorHighlight"
-        android:textSize="56"
+        android:textSize="56sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

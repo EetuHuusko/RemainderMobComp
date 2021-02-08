@@ -1,7 +1,7 @@
 package com.example.mobilecomputing
 
-import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
 import android.content.Intent
 import android.content.Context
 import android.util.Log
@@ -38,6 +38,7 @@ class LoginActivity : AppCompatActivity() {
 
         binding.ChangeButton.setOnClickListener {
             Log.d("ChangeLogin", "Change Login Button Triggered")
+            // Change to Fingerprint Login
             startActivity(Intent(applicationContext, FingerLoginActivity::class.java))
         }
 
@@ -51,14 +52,14 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun authentication() {
-        val input_username = findViewById<EditText>(R.id.loginUsername).text
-        val input_password = findViewById<EditText>(R.id.loginPassword).text
+        val inputUsername = findViewById<EditText>(R.id.loginUsername).text
+        val inputPassword = findViewById<EditText>(R.id.loginPassword).text
         val sharedPref = applicationContext.getSharedPreferences(
             getString(R.string.sharedPreferences), Context.MODE_PRIVATE)
-        val saved_username = sharedPref.getString("username", null)
-        val saved_password = sharedPref.getString("password", null)
-        if(input_username.toString().equals(saved_username)) {
-            if(input_password.toString().equals(saved_password)) {
+        val savedUsername = sharedPref.getString("username", null)
+        val savedPassword = sharedPref.getString("password", null)
+        if(inputUsername.toString() == savedUsername) {
+            if(inputPassword.toString() == savedPassword) {
                 applicationContext.getSharedPreferences(
                     getString(R.string.sharedPreferences),
                     Context.MODE_PRIVATE
@@ -70,9 +71,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun checkLoginStatus() {
-        val login_status = applicationContext.getSharedPreferences(getString(R.string.sharedPreferences), Context.MODE_PRIVATE).getInt("LoginStatus", 0)
+        val loginStatus = applicationContext.getSharedPreferences(getString(R.string.sharedPreferences), Context.MODE_PRIVATE).getInt("LoginStatus", 0)
 
-        if(login_status == 1){
+        if(loginStatus == 1){
             startActivity(Intent(applicationContext, MainActivity::class.java))
         }
     }

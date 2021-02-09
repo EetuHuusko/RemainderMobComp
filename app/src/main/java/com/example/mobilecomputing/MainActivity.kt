@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Build
+import android.widget.BaseAdapter
 import android.view.LayoutInflater
+import android.widget.TextView
 import android.view.View
 import android.view.ViewGroup
 import android.view.Menu
@@ -28,18 +30,24 @@ import kotlinx.android.synthetic.main.activity_main.view.*
 class MainActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
+    var arrayList: ArrayList<TestData> = ArrayList()
+    var adapter: TestAdapter? = null
     private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
-
         listView = binding.listView
 
-        populateTestDb()
+        arrayList.add(TestData("Reminder 1", "09.02.2021 16:00 UTC+2", "Oulu"))
+        arrayList.add(TestData("Reminder 2", "10.02.2021 16:00 UTC+2", "Oulu"))
+        adapter = TestAdapter(this, arrayList)
+        listView.adapter = adapter
+
+        //populateTestDb()
         
-        refreshListView()
+        //refreshListView()
 
         binding.mainGoProfile.setOnClickListener {
             startActivity(Intent(applicationContext, ProfileActivity::class.java))
@@ -108,3 +116,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+class TestAdapter(private val context: Context, private val arrayList: java.util.ArrayList<TestData>) : BaseAdapter() {
+    private lateinit var message: TextView
+    private lateinit var time: TextView
+    private lateinit var location: TextView
+    override fun getCount(): Int {
+        return arrayList.size
+    }
+    override fun getItem(position: Int): Any {
+        return position
+    }
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View? {
+        var convertView = convertView
+        convertView = LayoutInflater.from(context).inflate(R.layout.reminder_item, parent, false)
+        message = convertView.findViewById(R.id.reminderMessage)
+        time = convertView.findViewById(R.id.reminderTime)
+        location = convertView.findViewById(R.id.reminderLocation)
+        message.text = " " + arrayList[position].message
+        time.text = arrayList[position].time
+        location.text = arrayList[position].location
+        return convertView
+    }
+}
+class TestData(var message: String, var time: String, var location: String)

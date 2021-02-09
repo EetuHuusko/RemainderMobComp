@@ -18,5 +18,10 @@ class FingerLoginActivity : AppCompatActivity() {
         binding = ActivityFingerLoginBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+
+        binding.changeLoginFinger.setOnClickListener {
+            Log.d("Test", "Change Login Activity Button Triggered")
+            startActivity(Intent(applicationContext, LoginActivity::class.java))
+        }
     }
 }

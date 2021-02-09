@@ -25,7 +25,11 @@ class ProfileActivity : AppCompatActivity() {
         val profile_user: TextView = findViewById<TextView>(R.id.profile_username)
         profile_user.text = "$current_user"
 
-        binding.profileBacktomain.setOnClickListener {
+        binding.editProfile.setOnClickListener {
+            startActivity(Intent(applicationContext, ProfileEditActivity::class.java))
+        }
+
+        binding.backToMain.setOnClickListener {
             startActivity(Intent(applicationContext, MainActivity::class.java))
         }
     }

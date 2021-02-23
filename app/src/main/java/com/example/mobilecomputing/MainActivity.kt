@@ -3,6 +3,7 @@ package com.example.mobilecomputing
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import android.os.Build
 import android.widget.BaseAdapter
 import android.view.LayoutInflater
@@ -13,25 +14,25 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
-import android.os.AsyncTask
 import android.content.Intent
+import android.os.AsyncTask
 import android.util.Log
 import android.widget.*
 import androidx.room.Room
 import androidx.core.app.NotificationCompat
 import com.example.mobilecomputing.db.AppDatabase
 import com.example.mobilecomputing.db.ReminderInfo
+import com.example.mobilecomputing.ReminderAdaptor
 import com.example.mobilecomputing.databinding.ActivityMainBinding
 import com.example.mobilecomputing.databinding.ActivityLoginBinding
 import com.example.mobilecomputing.databinding.ActivityProfileBinding
+import com.example.mobilecomputing.databinding.ActivityAddReminderBinding
 import kotlinx.android.synthetic.main.activity_main.view.*
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
-    var arrayList: ArrayList<TestData> = ArrayList()
-    var adapter: TestAdapter? = null
     private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,14 +41,48 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
         listView = binding.listView
 
-        arrayList.add(TestData("Reminder 1", "09.02.2021 16:00 UTC+2", "Oulu"))
-        arrayList.add(TestData("Reminder 2", "10.02.2021 16:00 UTC+2", "Oulu"))
-        adapter = TestAdapter(this, arrayList)
-        listView.adapter = adapter
-
         //populateTestDb()
-        
-        //refreshListView()
+
+        refreshListView()
+
+        listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, id ->
+
+            val selectedReminderInfo = listView.adapter.getItem(position) as ReminderInfo
+            val message =
+                "Do you want to modify reminder ${selectedReminderInfo.message}?"
+
+            // Show AlertDialog to modify the reminder
+            val builder = AlertDialog.Builder(this@MainActivity)
+            builder.setTitle("Modify reminder?")
+                .setMessage(message)
+                .setNegativeButton("Delete") { _, _ ->
+                    //delete from database
+                    AsyncTask.execute {
+                        val db = Room
+                            .databaseBuilder(
+                                applicationContext,
+                                AppDatabase::class.java,
+                                "com.example.mobilecomputing.db"
+                            )
+                            .build()
+                        db.reminderDAO().delete(selectedReminderInfo.uid!!)
+                    }
+                    refreshListView()
+                    Toast.makeText(this, "Reminder deleted.", Toast.LENGTH_LONG).show()
+                }
+                .setPositiveButton("Edit") {_, _ ->
+                    startActivity(Intent(applicationContext, AddReminderActivity::class.java).putExtra("selectedID", selectedReminderInfo.uid!!))
+                }
+                .setNeutralButton("Cancel") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+
+        }
+
+        binding.mainAddReminer.setOnClickListener {
+            startActivity(Intent(applicationContext, AddReminderActivity::class.java))
+        }
 
         binding.mainGoProfile.setOnClickListener {
             startActivity(Intent(applicationContext, ProfileActivity::class.java))
@@ -64,12 +99,14 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-
+    override fun onResume() {
+        super.onResume()
+        refreshListView()
+    }
 
     private fun refreshListView() {
         var refreshTask = LoadReminderInfoEntries()
         refreshTask.execute()
-
     }
 
     inner class LoadReminderInfoEntries : AsyncTask<String?, String?, List<ReminderInfo>>() {
@@ -81,9 +118,9 @@ class MainActivity : AppCompatActivity() {
                     "com.example.mobilecomputing.db"
                 )
                 .build()
-            val reminderInfos = db.reminderDAO().getReminderInfos()
+            val reminderInfo = db.reminderDAO().getReminderInfos()
             db.close()
-            return reminderInfos
+            return reminderInfo
         }
 
         override fun onPostExecute(reminderInfos: List<ReminderInfo>?) {
@@ -98,48 +135,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun populateTestDb(){
-        val testReminder1 = ReminderInfo(
-            null,
-            message = "Pick up Johnny from school",
-            time = "2021-02-15 Monday 10:00 UTC+2",
-            location = "School"
-        )
+        val loggedUserID = applicationContext.getSharedPreferences(getString(R.string.sharedPreferences),
+                Context.MODE_PRIVATE).getString("username",null).toString()
+        val testReminder1 = ReminderInfo(null, message = "Pick up Johnny from school",
+                location_x = "65.06002857341045",
+                location_y = "25.46766200254371",
+                reminder_time = "2021-02-26 Friday 14:00 UTC+2",
+                creation_time = "2021-02-21 Sunday 18:00 UTC+2",
+                creation_id = loggedUserID, reminder_seen = false)
         AsyncTask.execute {
             val db = Room.databaseBuilder(
                 applicationContext,
                 AppDatabase::class.java,
-                "com.example.mobilecomputing"
+                "com.example.mobilecomputing.db"
             ).build()
             val uuid1 = db.reminderDAO().insert(testReminder1).toInt()
             db.close()
         }
     }
 }
-
-class TestAdapter(private val context: Context, private val arrayList: java.util.ArrayList<TestData>) : BaseAdapter() {
-    private lateinit var message: TextView
-    private lateinit var time: TextView
-    private lateinit var location: TextView
-    override fun getCount(): Int {
-        return arrayList.size
-    }
-    override fun getItem(position: Int): Any {
-        return position
-    }
-    override fun getItemId(position: Int): Long {
-        return position.toLong()
-    }
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View? {
-        var convertView = convertView
-        convertView = LayoutInflater.from(context).inflate(R.layout.reminder_item, parent, false)
-        message = convertView.findViewById(R.id.reminderMessage)
-        time = convertView.findViewById(R.id.reminderTime)
-        location = convertView.findViewById(R.id.reminderLocation)
-        message.text = " " + arrayList[position].message
-        time.text = arrayList[position].time
-        location.text = arrayList[position].location
-        return convertView
-    }
-}
-class TestData(var message: String, var time: String, var location: String)

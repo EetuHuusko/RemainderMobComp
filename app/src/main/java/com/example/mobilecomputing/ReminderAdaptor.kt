@@ -18,8 +18,8 @@ class ReminderAdaptor(context: Context, private val list: List<ReminderInfo>) : 
         var rowBinding = ReminderItemBinding.inflate(inflater, container, false)
 
         rowBinding.reminderMessage.text = list[position].message
-        rowBinding.reminderTime.text = list[position].time
-        rowBinding.reminderLocation.text = list[position].location
+        rowBinding.reminderLocation.text = list[position].location_x
+        rowBinding.reminderTime.text = list[position].reminder_time
 
         return rowBinding.root
     }

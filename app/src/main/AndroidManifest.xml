@@ -10,7 +10,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MobileComputing"
         android:usesCleartextTraffic="true">
-        <activity android:name=".ProfileEditActivity"></activity>
+        <activity android:name=".AddReminderActivity"></activity>
+        <activity android:name=".ProfileEditActivity" />
         <activity android:name=".CreateAccountActivity" />
         <activity android:name=".ProfileActivity" />
         <activity android:name=".FingerLoginActivity" />

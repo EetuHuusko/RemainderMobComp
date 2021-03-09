@@ -73,7 +73,7 @@ class LoginActivity : AppCompatActivity() {
                     getString(R.string.sharedPreferences),
                     Context.MODE_PRIVATE
                 ).edit().putInt("LoginStatus", 1).apply()
-                startActivity(Intent(applicationContext, MainActivity::class.java))
+                startActivity(Intent(applicationContext, MainActivity::class.java).putExtra("loggedUser", inputUsername.toString()))
             } else {
                 Toast.makeText(this, "Wrong username or password.", Toast.LENGTH_LONG).show()
             }

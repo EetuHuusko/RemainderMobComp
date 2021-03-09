@@ -93,6 +93,17 @@ class AddReminderActivity : AppCompatActivity() {
                 reminder_seen = false
             )
 
+            val reminderCalendar = GregorianCalendar.getInstance()
+            val setDate = reminder.reminder_time.split("T").toTypedArray()[0].split("-").toTypedArray()
+            val setTime = reminder.reminder_time.split("T").toTypedArray()[1].split(":").toTypedArray()
+
+            reminderCalendar.set(Calendar.YEAR,setDate[0].toInt())
+            reminderCalendar.set(Calendar.MONTH,setDate[1].toInt()-1)
+            reminderCalendar.set(Calendar.DAY_OF_MONTH,setDate[2].toInt())
+            reminderCalendar.set(Calendar.HOUR_OF_DAY, setTime[0].toInt())
+            reminderCalendar.set(Calendar.MINUTE, setTime[1].toInt())
+            reminderCalendar.set(Calendar.SECOND, 0)
+
             if(bundle!=null) {
                 val editReminder = ReminderInfo(
                     uid = bundle?.getInt("selectedID"),
@@ -112,8 +123,21 @@ class AddReminderActivity : AppCompatActivity() {
                         "com.example.mobilecomputing.db"
                     ).build()
                     db.reminderDAO().updateReminderInfo(editReminder)
-                    db.close()
+                    val uuid = bundle.getInt("selectedID")
+
+                    if (reminderCalendar.timeInMillis > Calendar.getInstance().timeInMillis) {
+                        db.reminderDAO().updateSeen(false, uuid)
+                        val message =
+                            "${editReminder.message} at ${editReminder.reminder_time}"
+                        MainActivity.setReminderWithWorkManager(
+                            applicationContext,
+                            uuid,
+                            reminderCalendar.timeInMillis,
+                            message
+                        )
+                    }
                 }
+
                 Toast.makeText(this, "Reminder modified!", Toast.LENGTH_LONG).show()
                 finish()
 
@@ -134,12 +158,23 @@ class AddReminderActivity : AppCompatActivity() {
                         AppDatabase::class.java,
                         "com.example.mobilecomputing.db"
                     ).build()
-                    val uuid1 = db.reminderDAO().insert(newReminder).toInt()
-                    db.close()
+                    val uuid = db.reminderDAO().insert(newReminder).toInt()
+
+                    if (reminderCalendar.timeInMillis > Calendar.getInstance().timeInMillis) {
+                        db.reminderDAO().updateSeen(false, uuid)
+                        val message =
+                            "${newReminder.message} at ${newReminder.reminder_time}"
+                        MainActivity.setReminderWithWorkManager(
+                            applicationContext,
+                            uuid,
+                            reminderCalendar.timeInMillis,
+                            message
+                        )
+                    }
                 }
+
                 Toast.makeText(this, "Reminder added!", Toast.LENGTH_LONG).show()
                 finish()
-
             }
         }
 

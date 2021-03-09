@@ -1,33 +1,32 @@
 package com.example.mobilecomputing
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.TaskStackBuilder
+import android.content.ContentResolver
 import android.content.Context
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
+import android.media.AudioAttributes
+import android.net.Uri
+import android.os.AsyncTask
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
-import android.os.Build
-import android.widget.BaseAdapter
-import android.view.LayoutInflater
-import android.widget.TextView
-import android.view.View
-import android.view.ViewGroup
-import android.view.Menu
-import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
-import android.content.Intent
-import android.os.AsyncTask
-import android.util.Log
-import android.widget.*
-import androidx.room.Room
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
+import androidx.room.Room
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.mobilecomputing.databinding.ActivityMainBinding
 import com.example.mobilecomputing.db.AppDatabase
 import com.example.mobilecomputing.db.ReminderInfo
-import com.example.mobilecomputing.ReminderAdaptor
-import com.example.mobilecomputing.databinding.ActivityMainBinding
-import com.example.mobilecomputing.databinding.ActivityLoginBinding
-import com.example.mobilecomputing.databinding.ActivityProfileBinding
-import com.example.mobilecomputing.databinding.ActivityAddReminderBinding
-import kotlinx.android.synthetic.main.activity_main.view.*
+import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 
 class MainActivity : AppCompatActivity() {
@@ -38,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
+        val bundle :Bundle ?=intent.extras
         setContentView(view)
         listView = binding.listView
 
@@ -104,13 +104,19 @@ class MainActivity : AppCompatActivity() {
         refreshListView()
     }
 
+    fun getUserID(): String {
+        val prefs = applicationContext.getSharedPreferences(
+            getString(R.string.sharedPreferences), Context.MODE_PRIVATE)
+        return prefs.getString("username", null).toString()
+    }
+
     private fun refreshListView() {
         var refreshTask = LoadReminderInfoEntries()
         refreshTask.execute()
     }
 
     inner class LoadReminderInfoEntries : AsyncTask<String?, String?, List<ReminderInfo>>() {
-        override fun doInBackground(vararg params: String?): List<ReminderInfo> {
+        override fun doInBackground(vararg params: String?): List<ReminderInfo>? {
             val db = Room
                 .databaseBuilder(
                     applicationContext,
@@ -118,7 +124,7 @@ class MainActivity : AppCompatActivity() {
                     "com.example.mobilecomputing.db"
                 )
                 .build()
-            val reminderInfo = db.reminderDAO().getReminderInfos()
+            val reminderInfo = db.reminderDAO().getSeenReminderInfos(getUserID())
             db.close()
             return reminderInfo
         }
@@ -136,23 +142,77 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun populateTestDb(){
-        val loggedUserID = applicationContext.getSharedPreferences(getString(R.string.sharedPreferences),
-                Context.MODE_PRIVATE).getString("username",null).toString()
-        val testReminder1 = ReminderInfo(null, message = "Pick up Johnny from school",
-                location_x = "65.06002857341045",
-                location_y = "25.46766200254371",
-                reminder_time = "2021-02-26 Friday 14:00 UTC+2",
-                creation_time = "2021-02-21 Sunday 18:00 UTC+2",
-                creation_id = loggedUserID, reminder_seen = false)
-        AsyncTask.execute {
-            val db = Room.databaseBuilder(
-                applicationContext,
-                AppDatabase::class.java,
-                "com.example.mobilecomputing.db"
-            ).build()
-            val uuid1 = db.reminderDAO().insert(testReminder1).toInt()
-            db.close()
+    companion object {
+
+        fun showNotification(context: Context, message: String, reminderId: Int) {
+
+            val notificationChannel = "REMIND_NOTIFICATION_CHANNEL"
+            val notificationId = Random.nextInt(10, 1000) + 5
+
+            val notificationIntent = Intent(context, LoginActivity::class.java)
+            notificationIntent.putExtra("notified_reminder_id", reminderId)
+            val notificationPendingIntent: PendingIntent = TaskStackBuilder.create(context).run {
+                addNextIntentWithParentStack(notificationIntent)
+                getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
+            }
+
+            val audioAttributes: AudioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
+            val notificationBuilder =
+                NotificationCompat.Builder(context, notificationChannel)
+                    .setSmallIcon(R.drawable.ic_notification_important_black_48dp)
+                    .setContentTitle(context.getString(R.string.app_name))
+                    .setContentText(message)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setGroup(notificationChannel)
+                    .setContentIntent(notificationPendingIntent)
+                    .setAutoCancel(true) //remove notification when tapped
+
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val channel = NotificationChannel(
+                notificationChannel,
+                context.getString(R.string.app_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = context.getString(R.string.app_name)
+            }
+
+            //Set custom notification sound
+            channel.setSound(Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + "com.example.mobilecomputing" + "/" + R.raw.notification), audioAttributes)
+
+            notificationManager.createNotificationChannel(channel)
+
+            notificationManager.notify(notificationId, notificationBuilder.build())
+
+        }
+
+        fun setReminderWithWorkManager(
+            context: Context,
+            uid: Int,
+            timeInMillis: Long,
+            message: String
+        ) {
+            val reminderParameters = Data.Builder()
+                .putString("message", message)
+                .putInt("uid", uid)
+                .build()
+
+            var minutesFromNow = 0L
+            if (timeInMillis > System.currentTimeMillis())
+                minutesFromNow = timeInMillis - System.currentTimeMillis()
+
+            val reminderRequest = OneTimeWorkRequestBuilder<ReminderWorker>()
+                .setInputData(reminderParameters)
+                .setInitialDelay(minutesFromNow, TimeUnit.MILLISECONDS)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(uid.toString(), ExistingWorkPolicy.REPLACE, reminderRequest)
         }
     }
 }

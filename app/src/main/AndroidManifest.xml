@@ -10,7 +10,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MobileComputing"
         android:usesCleartextTraffic="true">
-        <activity android:name=".AddReminderActivity"></activity>
+        <receiver
+            android:name=".RemiderReceiver"
+            android:enabled="true"
+            android:exported="true"></receiver>
+
+        <activity android:name=".ReminderWorker" />
+        <activity android:name=".AddReminderActivity" />
         <activity android:name=".ProfileEditActivity" />
         <activity android:name=".CreateAccountActivity" />
         <activity android:name=".ProfileActivity" />

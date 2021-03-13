@@ -8,13 +8,20 @@
     <ListView
         android:id="@+id/listView"
         android:layout_width="match_parent"
-        android:layout_height="446dp" />
+        android:layout_height="394dp" />
 
     <Button
         android:id="@+id/mainAddReminer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/action_main_add_remainder"
+        app:backgroundTint="@color/teal_700" />
+
+    <Button
+        android:id="@+id/mainVirtualLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_virtual_location"
         app:backgroundTint="@color/teal_700" />
 
     <Button
